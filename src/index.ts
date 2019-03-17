@@ -1,3 +1,28 @@
+/**
+ * Order Priorities
+ * 
+ * 1. newest descending
+ * 2. highest called descending
+ * 3. 
+ * 
+ * It might be worth having a top x% cache in a separate object / array for the most called query.
+ * Manual binary lookup passed from specific routes for single queries
+ *  to elaborate, if you have a controller that only ever runs 1 query, you could use that query cache ID passed
+ *  in order to order that without needing to hash the query and parameters. 
+ * 
+ */
+
+declare interface globalOptions {
+    enabled: boolean; // is it currently running
+    maxCacheLifeTime: number; // how long can each cache item lasts before being nuked
+    maxCacheItems: number; // maximum number of items can be stored
+    maxMemoryCapacity: number; // maximum amount of memory size before culling cached items from the bottom of the ordered list
+    fullClearCycle: number; // how often the whole cache system is emptied
+    orderPriority: number; // in which way to order the objects in cache
+    reorderCycle: number; // how often to run the re-order cycle
+    ignoreEnvironmentVariables: boolean; // if the setup of this module should not look for environment variables
+}
+
 declare interface ICacheItem {
     hash: string;
     results: Array<any>;

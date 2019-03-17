@@ -1,7 +1,7 @@
 {
-  "name": "mysqlquerycache",
-  "version": "1.0.0",
-  "description": "",
+  "name": "speedy-query",
+  "version": "0.0.2",
+  "description": "Fast, lightweight query cache module to bolt onto mysql",
   "main": "index.js",
   "directories": {
     "test": "tests"
