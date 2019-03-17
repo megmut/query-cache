@@ -1,0 +1,33 @@
+{
+  "name": "mysqlquerycache",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "mocha -r ts-node/register tests/**/*.test.ts",
+    "coverage": "nyc -r lcov -e .ts npm test && nyc report"
+  },
+  "nyc": {
+    "all": true,
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "tests/**/*.test.ts"
+    ]
+  },
+  "author": "Nicholas Mordecai (http://nicholasmordecai.co.uk)",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "chai": "^4.2.0",
+    "mocha": "^6.0.2",
+    "nyc": "^13.3.0",
+    "source-map-support": "^0.5.11",
+    "ts-node": "^8.0.3",
+    "typescript": "^3.3.3333"
+  }
+}
