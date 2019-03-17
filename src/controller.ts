@@ -1,3 +1,5 @@
+import { CacheItem } from "./cacheItem";
+
 /**
  * Order Priorities
  * 
@@ -12,7 +14,7 @@
  * 
  */
 
-declare interface globalOptions {
+declare interface IGlobalOptions {
     enabled: boolean; // is it currently running
     maxCacheLifeTime: number; // how long can each cache item lasts before being nuked
     maxCacheItems: number; // maximum number of items can be stored
@@ -20,6 +22,8 @@ declare interface globalOptions {
     fullClearCycle: number; // how often the whole cache system is emptied
     orderPriority: number; // in which way to order the objects in cache
     reorderCycle: number; // how often to run the re-order cycle
+    insertNewFirst: boolean; // insert new cached items on top of the list
+    insertNewLast: boolean; // insert new cached items to the bottom of the list
     ignoreEnvironmentVariables: boolean; // if the setup of this module should not look for environment variables
 }
 
@@ -34,6 +38,27 @@ declare interface ICache {
 
 export class CacheController {
     private static _cache: { [queryKey: string]: ICache };
+    private static _totalMemory: number;
+
+    constructor(options: IGlobalOptions) {
+
+    }
+
+    private initializeFullCacheClearCycle(interval: number): NodeJS.Timeout {
+        if(!interval) {
+            throw new Error('No full cache clear cycle interval was provided');
+        }
+
+        const timer = setInterval(() => {
+            console.log('clear the cache');
+        }, interval);
+
+        return timer;
+    }
+
+    public recycleItem(cachedItem: CacheItem) {
+        // delete the cached item
+    }
 
     public static init() {
         CacheController._cache = {};

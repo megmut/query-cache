@@ -1,4 +1,4 @@
-import { CacheController } from '../src/index';
+import { CacheController } from '../src/controller';
 import { expect } from 'chai';
 import 'mocha';
 
