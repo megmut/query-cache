@@ -5,7 +5,7 @@ import { CacheItem } from "./cacheItem";
  * 
  * 1. newest descending
  * 2. highest called descending
- * 3. 
+ * 3. manual priority / priority override
  * 
  * It might be worth having a top x% cache in a separate object / array for the most called query.
  * Manual binary lookup passed from specific routes for single queries
@@ -15,16 +15,16 @@ import { CacheItem } from "./cacheItem";
  */
 
 declare interface IGlobalOptions {
-    enabled: boolean; // is it currently running
-    maxCacheLifeTime: number; // how long can each cache item lasts before being nuked
-    maxCacheItems: number; // maximum number of items can be stored
-    maxMemoryCapacity: number; // maximum amount of memory size before culling cached items from the bottom of the ordered list
-    fullClearCycle: number; // how often the whole cache system is emptied
-    orderPriority: number; // in which way to order the objects in cache
-    reorderCycle: number; // how often to run the re-order cycle
-    insertNewFirst: boolean; // insert new cached items on top of the list
-    insertNewLast: boolean; // insert new cached items to the bottom of the list
-    ignoreEnvironmentVariables: boolean; // if the setup of this module should not look for environment variables
+    enabled?: boolean; // is it currently running
+    maxCacheLifeTime?: number; // how long can each cache item lasts before being nuked
+    maxCacheItems?: number; // maximum number of items can be stored
+    maxMemoryCapacity?: number; // maximum amount of memory size before culling cached items from the bottom of the ordered list
+    emptyCacheCycle?: number; // how often the whole cache system is emptied
+    orderPriority?: number; // in which way to order the objects in cache
+    reorderCycle?: number; // how often to run the re-order cycle
+    insertNewFirst?: boolean; // insert new cached items on top of the list
+    insertNewLast?: boolean; // insert new cached items to the bottom of the list
+    ignoreEnvironmentVariables?: boolean; // if the setup of this module should not look for environment variables
 }
 
 declare interface ICacheItem {
@@ -40,8 +40,10 @@ export class CacheController {
     private static _cache: { [queryKey: string]: ICache };
     private static _totalMemory: number;
 
-    constructor(options: IGlobalOptions) {
-
+    constructor(options?: IGlobalOptions) {
+        if(options.emptyCacheCycle) {
+            this.initializeFullCacheClearCycle(options.emptyCacheCycle);
+        }
     }
 
     private initializeFullCacheClearCycle(interval: number): NodeJS.Timeout {
@@ -62,10 +64,6 @@ export class CacheController {
 
     public static init() {
         CacheController._cache = {};
-    }
-
-    public static helloWorld(): string {
-        return 'Hello world!';
     }
 
     public static findInCache(queryKey: string, parameters: Array<number | string | string[]>): Array<any> | false | never {
