@@ -1,12 +1,30 @@
-import { CacheController } from '../src/controller';
+import { QueryCache } from '../src/controller';
 import { expect } from 'chai';
 import 'mocha';
 
-describe('Hello function', () => {
+describe('Query Cache Controller', () => {
 
-  it('should return hello world', () => {
-    const result = CacheController.helloWorld();
-    expect(result).to.equal('Hello world!');
+  it('should correctly instantiate the query cache class', () => {
+    const cache = new QueryCache({});
+    expect(cache).to.be.instanceOf(QueryCache);
   });
+
+  it('should handle not passing an object to the constructor', () => {
+    const cache = new QueryCache();
+    expect(cache).to.be.instanceOf(QueryCache);
+  });
+
+  it('should be able to access the global options object', () => {
+    const cache = new QueryCache();
+    const options = cache.options;
+    expect(options).to.eql({});
+  });
+
+  it('should be able to set and read the emptyCacheCycle option', () => {
+    const cache = new QueryCache({emptyCacheCycle: 100000});
+    const cycle = cache.options.emptyCacheCycle;
+    expect(cycle).to.equal(100000);
+  });
+
 
 });

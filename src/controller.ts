@@ -12,6 +12,8 @@ import { CacheItem } from "./cacheItem";
  *  to elaborate, if you have a controller that only ever runs 1 query, you could use that query cache ID passed
  *  in order to order that without needing to hash the query and parameters. 
  * 
+ * Creating class objects rather than literal objects is slower. They won't be created all that often,
+ *  but it's possible to pre-create empty cache items and store them in a pool to re-use. 
  */
 
 declare interface IGlobalOptions {
@@ -36,11 +38,13 @@ declare interface ICache {
     cachedQueries: Array<ICacheItem>;
 }
 
-export class CacheController {
-    private static _cache: { [queryKey: string]: ICache };
-    private static _totalMemory: number;
+export class QueryCache {
+    private _cache: { [queryKey: string]: ICache };
+    private _totalMemory: number;
+    private _options: IGlobalOptions;
 
-    constructor(options?: IGlobalOptions) {
+    constructor(options: IGlobalOptions = {}) {
+        this._options = options;
         if(options.emptyCacheCycle) {
             this.initializeFullCacheClearCycle(options.emptyCacheCycle);
         }
@@ -62,18 +66,18 @@ export class CacheController {
         // delete the cached item
     }
 
-    public static init() {
-        CacheController._cache = {};
+    public init() {
+        this._cache = {};
     }
 
-    public static findInCache(queryKey: string, parameters: Array<number | string | string[]>): Array<any> | false | never {
+    public  findInCache(queryKey: string, parameters: Array<number | string | string[]>): Array<any> | false | never {
         // check that there is a base instance of a query cache from the query key
-        if(CacheController._cache[queryKey]) {
+        if(this._cache[queryKey]) {
             // store a locally scoped cachedQueries array for faster lookup
-            let cachedQueries = CacheController._cache[queryKey].cachedQueries;
+            let cachedQueries = this._cache[queryKey].cachedQueries;
 
             // generate a new hash from the queryKey and the parameters
-            let hashLookup = CacheController.generateHash(queryKey, parameters);
+            let hashLookup = this.generateHash(queryKey, parameters);
 
             // loop through each cached item of the query
             for(let cacheItem of cachedQueries) {
@@ -92,43 +96,47 @@ export class CacheController {
         }
     }
 
-    public static createCache (queryKey: string, parameters: Array<number | string | string[]>, results: Array<any>): void {
+    public createCache (queryKey: string, parameters: Array<number | string | string[]>, results: Array<any>): void {
         // if a array entry of cached queries doesn't exist under the query key, then create it
-        if(!CacheController._cache[queryKey]) {
-            CacheController._cache[queryKey] = { cachedQueries: [] };
+        if(!this._cache[queryKey]) {
+            this._cache[queryKey] = { cachedQueries: [] };
         }
 
         // create a new cache item object with a hash of the query key and parameters
         let cacheItem: ICacheItem = {
-            hash: CacheController.generateHash(queryKey, parameters),
+            hash: this.generateHash(queryKey, parameters),
             results: results
         };
 
         // add the new cache item to the array of cached queries
-            CacheController._cache[queryKey].cachedQueries.push(cacheItem);
+        this._cache[queryKey].cachedQueries.push(cacheItem);
     }
 
-    public static removeFromCache(queryKey: string | string[]): void {
+    public removeFromCache(queryKey: string | string[]): void {
         if(typeof(queryKey) === 'string') {
-            delete CacheController._cache[queryKey];
+            delete this._cache[queryKey];
         } else {
             for(let key of queryKey) {
-                delete CacheController._cache[key];
+                delete this._cache[key];
             }
         }
     }
 
-    public static nukeCache(): void {
-        CacheController._cache = {};
+    public nukeCache(): void {
+        this._cache = {};
     }
 
-    private static generateHash(queryKey: string, parameters: Array<number | string | string[]>): string {
+    private generateHash(queryKey: string, parameters: Array<number | string | string[]>): string {
         // return SHA1.createHash('sha1').update(queryKey + ',' + parameters.concat(',')).digest('base64');
         // need to swap SHA1 for a custom function
         return '';
     }
 
-    public static get cachedItems() {
-        return Object.keys(CacheController._cache).length;
+    public get cachedItems() {
+        return Object.keys(this._cache).length;
+    }
+
+    public get options() {
+        return this._options;
     }
 }
