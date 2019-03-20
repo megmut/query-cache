@@ -128,19 +128,6 @@ export class QueryCache {
         if(!this._cache[key]) {
             this._cache[key] = new CacheItem(this);
         }
-        // if a array entry of cached queries doesn't exist under the query key, then create it
-        // if(!this._cache[queryKey]) {
-        //     this._cache[queryKey] = { cachedQueries: [] };
-        // }
-
-        // // create a new cache item object with a hash of the query key and parameters
-        // let cacheItem: ICacheItem = {
-        //     hash: this.generateHash(queryKey, parameters),
-        //     results: results
-        // };
-
-        // // add the new cache item to the array of cached queries
-        // this._cache[queryKey].cachedQueries.push(cacheItem);
     }
 
     public getCacheGroup(key: string | number): CacheItem {
@@ -162,9 +149,11 @@ export class QueryCache {
     }
 
     private generateHash(queryKey: string, parameters: Array<number | string | string[]>): string {
-        // return SHA1.createHash('sha1').update(queryKey + ',' + parameters.concat(',')).digest('base64');
-        // need to swap SHA1 for a custom function
-        return '';
+        const curDate = Date.now();
+        // need to bench test the join function
+        const parameterString = parameters.join('');
+        const hash = `${curDate}-${queryKey}-${parameterString}`;
+        return hash;
     }
 
     public get cache(): IGlobalCache {
