@@ -13,7 +13,7 @@ import { CacheItem } from "./cacheItem";
  *  in order to order that without needing to hash the query and parameters. 
  * 
  * Creating class objects rather than literal objects is slower. They won't be created all that often,
- *  but it's possible to pre-create empty cache items and store them in a pool to re-use. 
+ *  but it's possible to pre-create empty cache items and store them in a pool to re-use.
  */
 
 declare interface IGlobalOptions {
@@ -78,13 +78,18 @@ export class QueryCache {
         }, this._options.emptyCacheCycle);
     }
 
+    /**
+     * Check for expired cache
+     * 
+     * Has a time complexity of O(n)
+     */
     private checkForExpiredCache() {
         // store this so we don't have to lookup every time. 
         // negative about doing this is the end of life is calculated against when the cache cycle was begun, not the specific time
         const curDate: number = Date.now();
         for(var index in this._cache) {
             const cacheItem = this._cache[index];
-            if(cacheItem.endOfLife <= curDate) {
+            if(cacheItem.hasExpired(curDate)) {
                 this.recycleItem(cacheItem);
             }
         }
@@ -98,50 +103,36 @@ export class QueryCache {
         this._cache = {};
     }
 
-    public find(queryKey: string, parameters: Array<number | string | string[]>): Array<any> | false | never {
+    /**
+     * 
+     * @param queryKey 
+     * @param parameters 
+     * 
+     * Has a time complexity of O(1)
+     */
+    public find(queryKey: string, parameters: Array<number | string | string[]>): CacheItem | never {
+        const hash = this.generateHash(queryKey, parameters);
         // check that there is a base instance of a query cache from the query key
-        if(this._cache[queryKey]) {
-            // store a locally scoped cachedQueries array for faster lookup
-            // let cachedQueries = this._cache[queryKey].cachedQueries;
-
-            // generate a new hash from the queryKey and the parameters
-            let hashLookup = this.generateHash(queryKey, parameters);
-
-            // // loop through each cached item of the query
-            // for(let cacheItem of cachedQueries) {
-            //     // if the new hash is the same as the hash in the cache, then return the cached results
-            //     if(hashLookup === cacheItem.hash) {
-            //         return cacheItem.results;
-            //     } else {
-            //         return false;
-            //     }
-            // }
-
-            // if there are no cachedQueries, but it exists as an empty array, then return null
-            return false;
+        if(this._cache[hash]) {
+            return this._cache[hash];
         } else {
-            return false;
+            return null;
         }
     }
 
-    public createCache (key: string | number) {
-        if(!this._cache[key]) {
-            this._cache[key] = new CacheItem(this);
+    public createCache (hash: string | number): CacheItem {
+        // if the hash has already been used, then kill that cached item
+        if(this._cache[hash]) {
+            this.recycleItem(this._cache[hash])
         }
+
+        const newCacheItem = new CacheItem(this);
+        this._cache[hash] = newCacheItem
+        return newCacheItem;
     }
 
     public getCacheGroup(key: string | number): CacheItem {
         return this._cache[key] || null;
-    }
-
-    public removeFromCache(queryKey: string | string[]): void {
-        if(typeof(queryKey) === 'string') {
-            delete this._cache[queryKey];
-        } else {
-            for(let key of queryKey) {
-                delete this._cache[key];
-            }
-        }
     }
 
     public nukeCache(): void {
@@ -149,10 +140,9 @@ export class QueryCache {
     }
 
     private generateHash(queryKey: string, parameters: Array<number | string | string[]>): string {
-        const curDate = Date.now();
         // need to bench test the join function
         const parameterString = parameters.join('');
-        const hash = `${curDate}-${queryKey}-${parameterString}`;
+        const hash = `${queryKey}-${parameterString}`;
         return hash;
     }
 

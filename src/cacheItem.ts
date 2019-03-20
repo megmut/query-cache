@@ -10,9 +10,11 @@ export class CacheItem {
         this._endOfLife = lifespan + Date.now();
     }
 
-    private checkLifeSpan() {
-        if(this._endOfLife <= Date.now()) {
-            this.controller.recycleItem(this);
+    public hasExpired(comparisonDate: number): Boolean {
+        if(this._endOfLife <= comparisonDate) {
+            return true;
+        } else {
+            return false;
         }
     }
 
