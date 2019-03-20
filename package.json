@@ -1,5 +1,5 @@
 {
-  "name": "query-cache",
+  "name": "q2c",
   "version": "0.0.4",
   "description": "Fast, lightweight query cache module to bolt onto mysql",
   "main": "index.js",

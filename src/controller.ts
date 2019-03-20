@@ -33,26 +33,31 @@ declare interface ICacheItem {
     hash: string;
     results: Array<any>;
 }
-
-declare interface ICache {
-    cachedQueries: Array<ICacheItem>;
-}
-
-declare interface IGlobalCache { [queryKey: string]: ICache };
+declare interface IGlobalCache { [queryKey: string]: CacheItem };
 
 export class QueryCache {
     private _cache: IGlobalCache;
     private _totalMemory: number;
     private _options: IGlobalOptions;
+    private _job: NodeJS.Timeout;
 
     constructor(options: IGlobalOptions = {}) {
         this._options = options;
 
         this.init();
 
-        if(options.emptyCacheCycle) {
+        if(options.maxCacheLifeTime) {
             this.initializeFullCacheClearCycle(options.emptyCacheCycle);
         }
+
+        // setup the job to check for expired 
+        if(options.maxCacheLifeTime) {
+            this._options.maxCacheLifeTime = options.maxCacheLifeTime;
+        } else {
+            this._options.maxCacheLifeTime = 14400;
+        }
+
+        this.createMaxLifeJob();
     }
 
     private initializeFullCacheClearCycle(interval: number): NodeJS.Timeout {
@@ -67,6 +72,24 @@ export class QueryCache {
         return timer;
     }
 
+    private createMaxLifeJob() {
+        this._job = setInterval(() => {
+            this.checkForExpiredCache();
+        }, this._options.emptyCacheCycle);
+    }
+
+    private checkForExpiredCache() {
+        // store this so we don't have to lookup every time. 
+        // negative about doing this is the end of life is calculated against when the cache cycle was begun, not the specific time
+        const curDate: number = Date.now();
+        for(var index in this._cache) {
+            const cacheItem = this._cache[index];
+            if(cacheItem.endOfLife <= curDate) {
+                this.recycleItem(cacheItem);
+            }
+        }
+    }
+
     public recycleItem(cachedItem: CacheItem) {
         // delete the cached item
     }
@@ -79,20 +102,20 @@ export class QueryCache {
         // check that there is a base instance of a query cache from the query key
         if(this._cache[queryKey]) {
             // store a locally scoped cachedQueries array for faster lookup
-            let cachedQueries = this._cache[queryKey].cachedQueries;
+            // let cachedQueries = this._cache[queryKey].cachedQueries;
 
             // generate a new hash from the queryKey and the parameters
             let hashLookup = this.generateHash(queryKey, parameters);
 
-            // loop through each cached item of the query
-            for(let cacheItem of cachedQueries) {
-                // if the new hash is the same as the hash in the cache, then return the cached results
-                if(hashLookup === cacheItem.hash) {
-                    return cacheItem.results;
-                } else {
-                    return false;
-                }
-            }
+            // // loop through each cached item of the query
+            // for(let cacheItem of cachedQueries) {
+            //     // if the new hash is the same as the hash in the cache, then return the cached results
+            //     if(hashLookup === cacheItem.hash) {
+            //         return cacheItem.results;
+            //     } else {
+            //         return false;
+            //     }
+            // }
 
             // if there are no cachedQueries, but it exists as an empty array, then return null
             return false;
@@ -103,7 +126,7 @@ export class QueryCache {
 
     public createCache (key: string | number) {
         if(!this._cache[key]) {
-            this._cache[key] = { cachedQueries: []};
+            this._cache[key] = new CacheItem(this);
         }
         // if a array entry of cached queries doesn't exist under the query key, then create it
         // if(!this._cache[queryKey]) {
@@ -120,7 +143,7 @@ export class QueryCache {
         // this._cache[queryKey].cachedQueries.push(cacheItem);
     }
 
-    public getCacheGroup(key: string | number): ICache {
+    public getCacheGroup(key: string | number): CacheItem {
         return this._cache[key] || null;
     }
 
