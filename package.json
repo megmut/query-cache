@@ -1,6 +1,6 @@
 {
-  "name": "speedy-query",
-  "version": "0.0.3",
+  "name": "query-cache",
+  "version": "0.0.4",
   "description": "Fast, lightweight query cache module to bolt onto mysql",
   "main": "index.js",
   "directories": {
