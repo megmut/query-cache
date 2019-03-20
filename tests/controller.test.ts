@@ -18,9 +18,4 @@ describe('Query Cache Controller', () => {
     const controller = new QueryCache();
     expect(controller.cache).to.eql({});
   });
-
-  it('should initialize the global cache object', () => {
-    const controller = new QueryCache();
-    expect(controller.cache).to.eql({});
-  });
 });
