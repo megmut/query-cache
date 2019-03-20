@@ -33,5 +33,11 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      # run tests!
+      # run tests
       - run: yarn test
+
+      # run coverage
+
+      - run: yarn run coverage
+      - store_artifacts:
+          path: coverage

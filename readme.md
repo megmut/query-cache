@@ -1,6 +1,8 @@
 # speedy-query
 Fast light weight MySQL query cache management tool
 
+[![CircleCI](https://circleci.com/gh/megmut/speedy-query/tree/master.svg?style=svg)](https://circleci.com/gh/megmut/speedy-query/tree/master)
+
 ### Tests
 To run all tests, run 
 npm test
