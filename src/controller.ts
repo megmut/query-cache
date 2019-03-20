@@ -38,13 +38,18 @@ declare interface ICache {
     cachedQueries: Array<ICacheItem>;
 }
 
+declare interface IGlobalCache { [queryKey: string]: ICache };
+
 export class QueryCache {
-    private _cache: { [queryKey: string]: ICache };
+    private _cache: IGlobalCache;
     private _totalMemory: number;
     private _options: IGlobalOptions;
 
     constructor(options: IGlobalOptions = {}) {
         this._options = options;
+
+        this.init();
+
         if(options.emptyCacheCycle) {
             this.initializeFullCacheClearCycle(options.emptyCacheCycle);
         }
@@ -66,11 +71,11 @@ export class QueryCache {
         // delete the cached item
     }
 
-    public init() {
+    public init(): void {
         this._cache = {};
     }
 
-    public  findInCache(queryKey: string, parameters: Array<number | string | string[]>): Array<any> | false | never {
+    public find(queryKey: string, parameters: Array<number | string | string[]>): Array<any> | false | never {
         // check that there is a base instance of a query cache from the query key
         if(this._cache[queryKey]) {
             // store a locally scoped cachedQueries array for faster lookup
@@ -96,20 +101,27 @@ export class QueryCache {
         }
     }
 
-    public createCache (queryKey: string, parameters: Array<number | string | string[]>, results: Array<any>): void {
-        // if a array entry of cached queries doesn't exist under the query key, then create it
-        if(!this._cache[queryKey]) {
-            this._cache[queryKey] = { cachedQueries: [] };
+    public createCache (key: string | number) {
+        if(!this._cache[key]) {
+            this._cache[key] = { cachedQueries: []};
         }
+        // if a array entry of cached queries doesn't exist under the query key, then create it
+        // if(!this._cache[queryKey]) {
+        //     this._cache[queryKey] = { cachedQueries: [] };
+        // }
 
-        // create a new cache item object with a hash of the query key and parameters
-        let cacheItem: ICacheItem = {
-            hash: this.generateHash(queryKey, parameters),
-            results: results
-        };
+        // // create a new cache item object with a hash of the query key and parameters
+        // let cacheItem: ICacheItem = {
+        //     hash: this.generateHash(queryKey, parameters),
+        //     results: results
+        // };
 
-        // add the new cache item to the array of cached queries
-        this._cache[queryKey].cachedQueries.push(cacheItem);
+        // // add the new cache item to the array of cached queries
+        // this._cache[queryKey].cachedQueries.push(cacheItem);
+    }
+
+    public getCacheGroup(key: string | number): ICache {
+        return this._cache[key] || null;
     }
 
     public removeFromCache(queryKey: string | string[]): void {
@@ -130,6 +142,10 @@ export class QueryCache {
         // return SHA1.createHash('sha1').update(queryKey + ',' + parameters.concat(',')).digest('base64');
         // need to swap SHA1 for a custom function
         return '';
+    }
+
+    public get cache(): IGlobalCache {
+        return this._cache;
     }
 
     public get cachedItems() {
